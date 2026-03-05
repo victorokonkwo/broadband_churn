@@ -105,9 +105,10 @@ def score_active_customers(
             con = get_connection(db_path=snapshot_db, read_only=True)
 
     if snapshot_date is None:
-        snap = str(
-            con.execute("SELECT CAST(MAX(datevalue) AS DATE) FROM customer_info").fetchone()[0]
-        )
+        row = con.execute("SELECT CAST(MAX(datevalue) AS DATE) FROM customer_info").fetchone()
+        if row is None or row[0] is None:
+            raise ValueError("Could not determine snapshot_date from customer_info table")
+        snap = str(row[0])
     else:
         snap = snapshot_date
 

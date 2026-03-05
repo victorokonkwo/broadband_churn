@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import pickle
 from pathlib import Path
+from typing import Any, Callable, cast
 
 import joblib
 import lightgbm as lgb
@@ -52,9 +53,12 @@ class LGBMChurnModel(BaseChurnModel):
                      conf/model/lightgbm.yaml.
         """
         raw = OmegaConf.load(LGBM_CONF_PATH)
+        raw_container = OmegaConf.to_container(raw, resolve=True)
+        if not isinstance(raw_container, dict):
+            raise TypeError("Expected LightGBM config to be a mapping")
         defaults = {
             k: v
-            for k, v in OmegaConf.to_container(raw).items()  # type: ignore[arg-type]
+            for k, v in raw_container.items()
             if k != "optuna"
         }
         self.params = {**defaults, **(params or {})}
@@ -77,7 +81,7 @@ class LGBMChurnModel(BaseChurnModel):
         train_data = lgb.Dataset(X_tr, label=y_train, feature_name=self._feature_names)
         valid_sets = [train_data]
         valid_names = ["train"]
-        callbacks = [lgb.log_evaluation(period=100)]
+        callbacks: list[Callable[..., Any]] = [lgb.log_evaluation(period=100)]
 
         if X_val is not None and y_val is not None:
             X_v = self._get_features(X_val)
@@ -125,10 +129,11 @@ class LGBMChurnModel(BaseChurnModel):
                 X_feat[col] = 0.0
             X_feat = X_feat[model_feature_names]
 
-        return self._booster.predict(
+        preds = self._booster.predict(
             X_feat,
             num_iteration=self._booster.best_iteration,
         )
+        return np.asarray(preds, dtype=float)
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -144,7 +149,7 @@ class LGBMChurnModel(BaseChurnModel):
         except Exception:
             model = joblib.load(path)
         logger.info("Model loaded ← %s", path)
-        return model
+        return cast(LGBMChurnModel, model)
 
     @property
     def booster(self) -> lgb.Booster:

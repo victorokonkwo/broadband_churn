@@ -47,7 +47,7 @@ def format_scored_output(
         return "Low"
 
     n_drivers = cfg.scoring.top_n_drivers
-    driver_cols = {f"driver_{i + 1}": [] for i in range(n_drivers)}
+    driver_cols: dict[str, list[str]] = {f"driver_{i + 1}": [] for i in range(n_drivers)}
     for drivers in top_drivers:
         for i in range(n_drivers):
             col = f"driver_{i + 1}"

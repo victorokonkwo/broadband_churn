@@ -6,10 +6,12 @@ All plots saved to outputs/figures/ and returned as matplotlib Figures.
 from __future__ import annotations
 
 import logging
+from typing import cast
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.figure import Figure
 from sklearn.metrics import precision_recall_curve, roc_curve
 
 from churn.config import cfg
@@ -74,7 +76,10 @@ def plot_roc_curve(
     if ax is None:
         fig, ax = plt.subplots(figsize=(7, 6))
     else:
-        fig = ax.get_figure()
+        fig_obj = ax.get_figure()
+        if fig_obj is None:
+            fig_obj = plt.figure(figsize=(7, 6))
+        fig = cast(Figure, fig_obj)
     ax.plot(fpr, tpr, "steelblue", linewidth=2, label=f"LightGBM (AUC={auc_roc:.3f})")
     ax.plot([0, 1], [0, 1], "k--", label="Random baseline")
     ax.set_xlabel("False Positive Rate")
@@ -152,8 +157,11 @@ def plot_score_distribution(
     if ax is None:
         fig, ax = plt.subplots(figsize=(8, 5))
     else:
-        fig = ax.get_figure()
-    bins = np.linspace(0, 1, 40)
+        fig_obj = ax.get_figure()
+        if fig_obj is None:
+            fig_obj = plt.figure(figsize=(8, 5))
+        fig = cast(Figure, fig_obj)
+    bins = np.linspace(0, 1, 40).tolist()
     ax.hist(
         y_prob[y_true == 0], bins=bins, alpha=0.6, label="Retained", color="steelblue", density=True
     )

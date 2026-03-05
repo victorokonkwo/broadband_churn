@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 import pickle
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 from lifelines import CoxPHFitter, WeibullAFTFitter
@@ -83,7 +84,7 @@ class CoxPHChurnModel:
     @classmethod
     def load(cls, path: Path) -> CoxPHChurnModel:
         with path.open("rb") as f:
-            return pickle.load(f)
+            return cast(CoxPHChurnModel, pickle.load(f))
 
 
 class WeibullAFTChurnModel:
@@ -124,4 +125,4 @@ class WeibullAFTChurnModel:
     @classmethod
     def load(cls, path: Path) -> WeibullAFTChurnModel:
         with path.open("rb") as f:
-            return pickle.load(f)
+            return cast(WeibullAFTChurnModel, pickle.load(f))

@@ -21,6 +21,7 @@ from __future__ import annotations
 import logging
 import pickle
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -105,7 +106,7 @@ class TLearnerUpliftModel:
         X = df[self._feature_cols]
         p_t1 = self._model_t1.predict_proba(X)
         p_t0 = self._model_t0.predict_proba(X)
-        return p_t1 - p_t0
+        return np.asarray(p_t1 - p_t0, dtype=float)
 
     def get_qini_segments(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -139,4 +140,4 @@ class TLearnerUpliftModel:
     @classmethod
     def load(cls, path: Path) -> TLearnerUpliftModel:
         with path.open("rb") as f:
-            return pickle.load(f)
+            return cast(TLearnerUpliftModel, pickle.load(f))

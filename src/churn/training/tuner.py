@@ -8,6 +8,7 @@ early stopping, so poor trials are pruned quickly.
 from __future__ import annotations
 
 import logging
+from typing import Any, Callable
 
 import lightgbm as lgb
 import optuna
@@ -33,7 +34,7 @@ def build_objective(
     y_train: pd.Series,
     X_val: pd.DataFrame,
     y_val: pd.Series,
-) -> callable:
+) -> Callable[[optuna.Trial], float]:
     """
     Build an Optuna objective function.
     Closure captures training and validation data.
@@ -85,7 +86,7 @@ def build_objective(
 
         preds = booster.predict(X_val[feat_cols], num_iteration=booster.best_iteration)
         score = average_precision_score(y_val, preds)
-        return score
+        return float(score)
 
     return objective
 
@@ -97,7 +98,7 @@ def run_study(
     y_val: pd.Series,
     n_trials: int = 50,
     study_name: str = "churn-lgbm",
-) -> dict:
+) -> dict[str, Any]:
     """
     Run Optuna study and return best hyperparameters.
 

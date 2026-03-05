@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from typing import AsyncIterator
 
 import numpy as np
 import pandas as pd
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Load model into memory on startup."""
     try:
         registry.load_from_disk()
@@ -52,7 +53,7 @@ app = FastAPI(
 
 
 @app.get("/health", response_model=HealthResponse)
-async def health():
+async def health() -> HealthResponse:
     return HealthResponse(
         status="ok" if registry.is_loaded else "model_not_loaded",
         model_loaded=registry.is_loaded,
@@ -69,13 +70,18 @@ def _score_df(df: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
     """Score a DataFrame and return (probabilities, top_drivers_per_row)."""
     if not registry.is_loaded:
         raise HTTPException(status_code=503, detail="Model not loaded.")
+    if registry.calibrator is None or registry.model is None:
+        raise HTTPException(status_code=503, detail="Model artifacts unavailable.")
 
-    probs = registry.calibrator.predict_proba(df)
+    calibrator = registry.calibrator
+    model = registry.model
+    probs = calibrator.predict_proba(df)
 
     # Feature importance ranking from model (global — per-request SHAP too expensive)
-    feature_names = registry.model.feature_names
-    if registry.model._booster is not None:
-        importance = registry.model._booster.feature_importance(importance_type="gain")
+    feature_names = model.feature_names
+    booster = model.booster
+    if feature_names:
+        importance = booster.feature_importance(importance_type="gain")
         top_idx = np.argsort(importance)[::-1][: cfg.scoring.top_n_drivers]
         top_drivers = [feature_names[i] for i in top_idx]
     else:
@@ -93,7 +99,7 @@ def _risk_tier(p: float) -> str:
 
 
 @app.post("/predict", response_model=PredictionResponse)
-async def predict(features: CustomerFeatures):
+async def predict(features: CustomerFeatures) -> PredictionResponse:
     """Score a single customer."""
     df = _features_to_df(features)
     probs, drivers = _score_df(df)
@@ -106,7 +112,7 @@ async def predict(features: CustomerFeatures):
 
 
 @app.post("/batch-score", response_model=BatchPredictionResponse)
-async def batch_score(request: BatchPredictionRequest):
+async def batch_score(request: BatchPredictionRequest) -> BatchPredictionResponse:
     """Score a batch of customers."""
     rows = [c.model_dump() for c in request.customers]
     df = pd.DataFrame(rows)
