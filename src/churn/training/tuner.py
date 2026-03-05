@@ -8,7 +8,8 @@ early stopping, so poor trials are pruned quickly.
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import lightgbm as lgb
 import optuna

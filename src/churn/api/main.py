@@ -12,8 +12,8 @@ Start with:  uvicorn churn.api.main:app --host 0.0.0.0 --port 8000
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 import numpy as np
 import pandas as pd
