@@ -3,12 +3,11 @@ Schema validation layer using Pandera.
 Every DataFrame that enters the pipeline is validated before use.
 A schema violation raises a SchemaError — this is a hard stop, not a warning.
 """
+
 from __future__ import annotations
 
 import pandas as pd
-import pandera as pa
-from pandera import Column, DataFrameSchema, Check
-
+from pandera import Check, Column, DataFrameSchema
 
 # ─── Cease schema ─────────────────────────────────────────────────────────────
 
@@ -44,8 +43,10 @@ cease_schema = DataFrameSchema(
             lambda df: (
                 df["cease_completed_date"].isna()
                 | (df["cease_completed_date"] == "")
-                | (pd.to_datetime(df["cease_completed_date"], errors="coerce")
-                   >= pd.to_datetime(df["cease_placed_date"], errors="coerce"))
+                | (
+                    pd.to_datetime(df["cease_completed_date"], errors="coerce")
+                    >= pd.to_datetime(df["cease_placed_date"], errors="coerce")
+                )
             ).all(),
             error="cease_completed_date must be >= cease_placed_date",
         )
@@ -110,8 +111,8 @@ usage_schema = DataFrameSchema(
     columns={
         "unique_customer_identifier": Column(str, nullable=False),
         "calendar_date": Column("datetime64[ns]", nullable=False),
-        "usage_download_mbs": Column(str, nullable=True),   # stored as text
-        "usage_upload_mbs": Column(str, nullable=True),      # stored as text
+        "usage_download_mbs": Column(str, nullable=True),  # stored as text
+        "usage_upload_mbs": Column(str, nullable=True),  # stored as text
     },
     coerce=True,
 )
@@ -129,21 +130,21 @@ feature_matrix_schema = DataFrameSchema(
 )
 
 
-def validate_cease(df: "pd.DataFrame") -> "pd.DataFrame":  # noqa: F821
+def validate_cease(df: pd.DataFrame) -> pd.DataFrame:  # noqa: F821
     return cease_schema.validate(df)
 
 
-def validate_customer_info(df: "pd.DataFrame") -> "pd.DataFrame":  # noqa: F821
+def validate_customer_info(df: pd.DataFrame) -> pd.DataFrame:  # noqa: F821
     return customer_info_schema.validate(df)
 
 
-def validate_calls(df: "pd.DataFrame") -> "pd.DataFrame":  # noqa: F821
+def validate_calls(df: pd.DataFrame) -> pd.DataFrame:  # noqa: F821
     return calls_schema.validate(df)
 
 
-def validate_usage(df: "pd.DataFrame") -> "pd.DataFrame":  # noqa: F821
+def validate_usage(df: pd.DataFrame) -> pd.DataFrame:  # noqa: F821
     return usage_schema.validate(df)
 
 
-def validate_feature_matrix(df: "pd.DataFrame") -> "pd.DataFrame":  # noqa: F821
+def validate_feature_matrix(df: pd.DataFrame) -> pd.DataFrame:  # noqa: F821
     return feature_matrix_schema.validate(df)

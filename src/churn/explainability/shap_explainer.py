@@ -6,10 +6,10 @@ Produces:
     - Beeswarm: direction + magnitude — shows HOW each feature drives churn
     - Dependence plots for top 3 features: non-linear effect shapes
 """
+
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +17,7 @@ import pandas as pd
 import shap
 
 from churn.config import cfg
-from churn.models.lgbm_model import LGBMChurnModel, EXCLUDE_COLS
+from churn.models.lgbm_model import EXCLUDE_COLS, LGBMChurnModel
 
 logger = logging.getLogger(__name__)
 FIG_DIR = cfg.paths.figures_dir
@@ -138,7 +138,6 @@ def _save(fig: plt.Figure, filename: str) -> None:
 
 
 if __name__ == "__main__":
-    import pickle
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
     model_path = cfg.paths.model_artefacts_dir / "lgbm_churn_model.pkl"

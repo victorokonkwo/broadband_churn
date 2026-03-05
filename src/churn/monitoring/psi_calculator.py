@@ -10,6 +10,7 @@ Interpretation:
 PSI = Σ (actual% - expected%) × ln(actual% / expected%)
 where bins are equal-width over the reference distribution.
 """
+
 from __future__ import annotations
 
 import logging
@@ -77,8 +78,9 @@ def compute_psi_all_features(
         Features exceeding threshold are logged as warnings.
     """
     numeric_cols = reference.select_dtypes(include=["number"]).columns.tolist()
-    shared = [c for c in numeric_cols if c in current.columns
-              and c not in {"churned", "snapshot_date"}]
+    shared = [
+        c for c in numeric_cols if c in current.columns and c not in {"churned", "snapshot_date"}
+    ]
 
     results = {}
     for col in shared:
@@ -90,6 +92,8 @@ def compute_psi_all_features(
     n_alert = sum(1 for v in results.values() if v >= threshold)
     logger.info(
         "PSI computed for %s features — %s above threshold (%.2f)",
-        len(results), n_alert, threshold,
+        len(results),
+        n_alert,
+        threshold,
     )
     return results

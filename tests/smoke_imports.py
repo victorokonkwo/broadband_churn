@@ -1,4 +1,5 @@
 """Quick import smoke test for all churn modules."""
+
 import sys
 
 modules = [

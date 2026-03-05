@@ -7,6 +7,7 @@ Primary model — chosen for:
   - is_unbalance flag handles class imbalance without external resampling
   - Speed — essential for Optuna hyperparameter search
 """
+
 from __future__ import annotations
 
 import logging
@@ -19,7 +20,7 @@ import numpy as np
 import pandas as pd
 from omegaconf import OmegaConf
 
-from churn.config import cfg, PROJECT_ROOT
+from churn.config import PROJECT_ROOT
 from churn.models.base_model import BaseChurnModel
 
 logger = logging.getLogger(__name__)
@@ -31,9 +32,9 @@ EXCLUDE_COLS = {
     "unique_customer_identifier",
     "snapshot_date",
     "churned",
-    "tenure_bucket",    # use tenure_log instead
-    "sales_channel",    # use sales_channel_encoded
-    "crm_package_name", # use crm_package_name_encoded
+    "tenure_bucket",  # use tenure_log instead
+    "sales_channel",  # use sales_channel_encoded
+    "crm_package_name",  # use crm_package_name_encoded
 }
 
 
@@ -51,8 +52,11 @@ class LGBMChurnModel(BaseChurnModel):
                      conf/model/lightgbm.yaml.
         """
         raw = OmegaConf.load(LGBM_CONF_PATH)
-        defaults = {k: v for k, v in OmegaConf.to_container(raw).items()  # type: ignore[arg-type]
-                    if k != "optuna"}
+        defaults = {
+            k: v
+            for k, v in OmegaConf.to_container(raw).items()  # type: ignore[arg-type]
+            if k != "optuna"
+        }
         self.params = {**defaults, **(params or {})}
         self._booster: lgb.Booster | None = None
         self._feature_names: list[str] = []
@@ -66,7 +70,7 @@ class LGBMChurnModel(BaseChurnModel):
         y_train: pd.Series,
         X_val: pd.DataFrame | None = None,
         y_val: pd.Series | None = None,
-    ) -> "LGBMChurnModel":
+    ) -> LGBMChurnModel:
         X_tr = self._get_features(X_train)
         self._feature_names = list(X_tr.columns)
 
@@ -128,14 +132,14 @@ class LGBMChurnModel(BaseChurnModel):
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "wb") as f:
+        with path.open("wb") as f:
             pickle.dump(self, f)
         logger.info("Model saved → %s", path)
 
     @classmethod
-    def load(cls, path: Path) -> "LGBMChurnModel":
+    def load(cls, path: Path) -> LGBMChurnModel:
         try:
-            with open(path, "rb") as f:
+            with path.open("rb") as f:
                 model = pickle.load(f)
         except Exception:
             model = joblib.load(path)

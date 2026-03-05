@@ -4,6 +4,7 @@ All churn model implementations must implement this contract.
 Trainer and scoring modules only import BaseChurnModel — never the
 concrete implementation — following the Dependency Inversion principle.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -23,7 +24,7 @@ class BaseChurnModel(ABC):
         y_train: pd.Series,
         X_val: pd.DataFrame | None = None,
         y_val: pd.Series | None = None,
-    ) -> "BaseChurnModel":
+    ) -> BaseChurnModel:
         """Train the model. Returns self for chaining."""
         ...
 
@@ -43,7 +44,7 @@ class BaseChurnModel(ABC):
 
     @classmethod
     @abstractmethod
-    def load(cls, path: Path) -> "BaseChurnModel":
+    def load(cls, path: Path) -> BaseChurnModel:
         """Deserialise a model from disk."""
         ...
 

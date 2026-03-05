@@ -4,6 +4,7 @@ All aggregations run inside DuckDB — calls.csv is >50MB and must NOT be
 fully loaded into pandas RAM. Features are computed as-of snapshot_date
 to prevent any temporal leakage.
 """
+
 from __future__ import annotations
 
 import logging

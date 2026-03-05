@@ -10,6 +10,7 @@ Calibration is REQUIRED when scores are used in:
 Method: Isotonic Regression (preferred when n > 1000) or Platt Scaling (sigmoid).
 Validation: reliability diagram (calibration curve) before and after.
 """
+
 from __future__ import annotations
 
 import logging
@@ -20,12 +21,10 @@ import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.calibration import calibration_curve
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression as _SigmoidCalibrator
-
-from churn.config import cfg
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +35,11 @@ class SklearnModelWrapper(BaseEstimator, ClassifierMixin):
     enabling use with CalibratedClassifierCV.
     """
 
-    def __init__(self, churn_model: "BaseChurnModel") -> None:  # noqa: F821
+    def __init__(self, churn_model: BaseChurnModel) -> None:  # noqa: F821
         self.churn_model = churn_model
         self.classes_ = np.array([0, 1])
 
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> "SklearnModelWrapper":
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> SklearnModelWrapper:
         # Already fitted — calibrator just wraps, doesn't refit
         return self
 
@@ -69,10 +68,10 @@ class ChurnCalibrator:
 
     def fit(
         self,
-        model: "BaseChurnModel",  # noqa: F821
+        model: BaseChurnModel,  # noqa: F821
         X_cal: pd.DataFrame,
         y_cal: pd.Series,
-    ) -> "ChurnCalibrator":
+    ) -> ChurnCalibrator:
         """
         Fit the calibrator on held-out calibration data.
 
@@ -85,15 +84,11 @@ class ChurnCalibrator:
         raw_probs = model.predict_proba(X_cal)
 
         if self.method == "isotonic":
-            self._calibration_model = IsotonicRegression(
-                y_min=0.0, y_max=1.0, out_of_bounds="clip"
-            )
+            self._calibration_model = IsotonicRegression(y_min=0.0, y_max=1.0, out_of_bounds="clip")
             self._calibration_model.fit(raw_probs, y_cal)
         elif self.method == "sigmoid":
             self._calibration_model = _SigmoidCalibrator()
-            self._calibration_model.fit(
-                raw_probs.reshape(-1, 1), y_cal
-            )
+            self._calibration_model.fit(raw_probs.reshape(-1, 1), y_cal)
         else:
             raise ValueError(f"Unknown method: {self.method}")
 
@@ -108,13 +103,11 @@ class ChurnCalibrator:
         if self.method == "isotonic":
             return self._calibration_model.transform(raw_probs)
         else:  # sigmoid
-            return self._calibration_model.predict_proba(
-                raw_probs.reshape(-1, 1)
-            )[:, 1]
+            return self._calibration_model.predict_proba(raw_probs.reshape(-1, 1))[:, 1]
 
     def plot_calibration_curve(
         self,
-        model: "BaseChurnModel",  # noqa: F821
+        model: BaseChurnModel,  # noqa: F821
         X: pd.DataFrame,
         y: pd.Series,
         save_path: Path | None = None,
@@ -153,13 +146,13 @@ class ChurnCalibrator:
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "wb") as f:
+        with path.open("wb") as f:
             pickle.dump(self, f)
 
     @classmethod
-    def load(cls, path: Path) -> "ChurnCalibrator":
+    def load(cls, path: Path) -> ChurnCalibrator:
         try:
-            with open(path, "rb") as f:
+            with path.open("rb") as f:
                 return pickle.load(f)
         except Exception:
             return joblib.load(path)

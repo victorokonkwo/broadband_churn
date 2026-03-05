@@ -3,14 +3,13 @@ Central configuration module.
 Loads conf/config.yaml and exposes a typed Config dataclass.
 All other modules import from here — no hardcoded paths anywhere else.
 """
+
 from __future__ import annotations
 
-import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from omegaconf import OmegaConf
-
 
 # ─── Locate the project root (where conf/ lives) ──────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.parent.parent

@@ -4,6 +4,7 @@ Primary metric: AUC-PR (Average Precision) — correct for class imbalance.
 AUC-ROC is included but is misleadingly optimistic on imbalanced datasets.
 Business-facing metrics: Lift@K and Precision@K.
 """
+
 from __future__ import annotations
 
 import logging
@@ -15,7 +16,6 @@ from sklearn.metrics import (
     average_precision_score,
     brier_score_loss,
     f1_score,
-    precision_recall_curve,
     roc_auc_score,
 )
 
@@ -41,9 +41,9 @@ def compute_all_metrics(
 
     metrics: dict[str, float] = {}
 
-    metrics["auc_pr"]     = average_precision_score(y, p)
-    metrics["auc_roc"]    = roc_auc_score(y, p)
-    metrics["f1"]         = f1_score(y, y_pred, zero_division=0)
+    metrics["auc_pr"] = average_precision_score(y, p)
+    metrics["auc_roc"] = roc_auc_score(y, p)
+    metrics["f1"] = f1_score(y, y_pred, zero_division=0)
     metrics["brier_score"] = brier_score_loss(y, p)
 
     # Precision@K and Lift@K (K = % of customers contacted)
@@ -54,13 +54,15 @@ def compute_all_metrics(
         prec_k = y[top_k_idx].mean()
         lift_k = prec_k / base_rate if base_rate > 0 else 0.0
         metrics[f"precision_at_{k_pct}pct"] = prec_k
-        metrics[f"lift_at_{k_pct}pct"]      = lift_k
+        metrics[f"lift_at_{k_pct}pct"] = lift_k
 
     logger.info(
-        "Metrics — AUC-PR=%.4f  AUC-ROC=%.4f  F1=%.4f  "
-        "Lift@10%%=%.2f  Precision@10%%=%.4f",
-        metrics["auc_pr"], metrics["auc_roc"], metrics["f1"],
-        metrics["lift_at_10pct"], metrics["precision_at_10pct"],
+        "Metrics — AUC-PR=%.4f  AUC-ROC=%.4f  F1=%.4f  Lift@10%%=%.2f  Precision@10%%=%.4f",
+        metrics["auc_pr"],
+        metrics["auc_roc"],
+        metrics["f1"],
+        metrics["lift_at_10pct"],
+        metrics["precision_at_10pct"],
     )
     return metrics
 
@@ -97,13 +99,17 @@ def decile_table(
         pos = df.loc[mask, "y"].sum()
         cum_captured += pos
         rate = pos / n if n > 0 else 0.0
-        rows.append({
-            "decile": dec,
-            "n_customers": n,
-            "n_churners": int(pos),
-            "churn_rate": round(rate, 4),
-            "lift": round(rate / base_rate, 2) if base_rate > 0 else 0.0,
-            "cumulative_capture_rate": round(cum_captured / total_churners, 4) if total_churners > 0 else 0.0,
-        })
+        rows.append(
+            {
+                "decile": dec,
+                "n_customers": n,
+                "n_churners": int(pos),
+                "churn_rate": round(rate, 4),
+                "lift": round(rate / base_rate, 2) if base_rate > 0 else 0.0,
+                "cumulative_capture_rate": round(cum_captured / total_churners, 4)
+                if total_churners > 0
+                else 0.0,
+            }
+        )
 
     return pd.DataFrame(rows)

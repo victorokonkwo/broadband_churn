@@ -7,6 +7,7 @@ Pattern mirrors production feature stores (Feast, Hopsworks):
     - Output is validated against a Pandera schema
     - Materialised to data/features/ as Parquet for reproducibility
 """
+
 from __future__ import annotations
 
 import logging
@@ -16,12 +17,12 @@ import duckdb
 import pandas as pd
 
 from churn.config import cfg
-from churn.data.loader import get_connection, load_customer_info
+from churn.data.loader import get_connection
 from churn.data.validator import validate_feature_matrix
 from churn.features.call_features import build_call_features
 from churn.features.contract_features import build_contract_features
-from churn.features.usage_features import build_usage_features
 from churn.features.target_encoder import CrossValidatedTargetEncoder
+from churn.features.usage_features import build_usage_features
 
 logger = logging.getLogger(__name__)
 
@@ -123,10 +124,8 @@ def build_feature_matrix(
     usage_df = build_usage_features(snapshot_date, con)
 
     # 5. Merge
-    df = (
-        contract_df
-        .merge(call_df, on="unique_customer_identifier", how="left")
-        .merge(usage_df, on="unique_customer_identifier", how="left")
+    df = contract_df.merge(call_df, on="unique_customer_identifier", how="left").merge(
+        usage_df, on="unique_customer_identifier", how="left"
     )
     logger.info("  merged feature set: %s rows × %s cols", *df.shape)
 
@@ -147,7 +146,8 @@ def build_feature_matrix(
     churn_rate = df["churned"].mean()
     logger.info(
         "  final matrix: %s rows × %s cols  churn_rate=%.3f",
-        *df.shape, churn_rate,
+        *df.shape,
+        churn_rate,
     )
     return df, target_encoder
 

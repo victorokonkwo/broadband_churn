@@ -8,6 +8,7 @@ Endpoints:
 Start with:  uvicorn churn.api.main:app --host 0.0.0.0 --port 8000
          or: make serve
 """
+
 from __future__ import annotations
 
 import logging
@@ -75,7 +76,7 @@ def _score_df(df: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
     feature_names = registry.model.feature_names
     if registry.model._booster is not None:
         importance = registry.model._booster.feature_importance(importance_type="gain")
-        top_idx = np.argsort(importance)[::-1][:cfg.scoring.top_n_drivers]
+        top_idx = np.argsort(importance)[::-1][: cfg.scoring.top_n_drivers]
         top_drivers = [feature_names[i] for i in top_idx]
     else:
         top_drivers = []

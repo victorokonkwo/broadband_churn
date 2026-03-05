@@ -3,14 +3,15 @@ Model loader for the API serving layer.
 Loads model + calibrator from disk (or MLflow registry) at startup.
 Uses a module-level singleton so the model is loaded once, not per request.
 """
+
 from __future__ import annotations
 
 import logging
 from pathlib import Path
 
 from churn.config import cfg
-from churn.models.lgbm_model import LGBMChurnModel
 from churn.models.calibrator import ChurnCalibrator
+from churn.models.lgbm_model import LGBMChurnModel
 
 logger = logging.getLogger(__name__)
 

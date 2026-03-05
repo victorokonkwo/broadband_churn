@@ -5,6 +5,7 @@ thresholds are breached. Production integration points:
     - PagerDuty (critical drift)
     - Email (weekly summary)
 """
+
 from __future__ import annotations
 
 import json

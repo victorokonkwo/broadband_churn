@@ -3,6 +3,7 @@ Temporal train / validation / test split.
 NEVER use random splits on time-series data — this inflates AUC by 0.05–0.10.
 All split boundaries are driven by conf/config.yaml → splits section.
 """
+
 from __future__ import annotations
 
 import logging
@@ -60,7 +61,9 @@ class SplitResult:
             churn_rate = df["churned"].mean() if "churned" in df.columns else float("nan")
             logger.info(
                 "  %-6s  %7s rows  churn_rate=%.3f",
-                name, f"{len(df):,}", churn_rate,
+                name,
+                f"{len(df):,}",
+                churn_rate,
             )
         logger.info("  Total: %s rows", f"{total:,}")
 
@@ -85,30 +88,36 @@ def temporal_split(
         SplitResult with .train, .val, .test DataFrames
     """
     train_end = pd.Timestamp(cfg.splits.train_end_date)
-    val_end   = pd.Timestamp(cfg.splits.val_end_date)
-    test_end  = pd.Timestamp(cfg.splits.test_end_date)
+    val_end = pd.Timestamp(cfg.splits.val_end_date)
+    test_end = pd.Timestamp(cfg.splits.test_end_date)
 
     dates = pd.to_datetime(df[date_col])
 
     train = df[dates <= train_end].copy()
-    val   = df[(dates > train_end) & (dates <= val_end)].copy()
-    test  = df[(dates > val_end) & (dates <= test_end)].copy()
+    val = df[(dates > train_end) & (dates <= val_end)].copy()
+    test = df[(dates > val_end) & (dates <= test_end)].copy()
 
     result = SplitResult(
-        train=train, val=val, test=test,
-        train_end=train_end, val_end=val_end, test_end=test_end,
+        train=train,
+        val=val,
+        test=test,
+        train_end=train_end,
+        val_end=val_end,
+        test_end=test_end,
     )
 
     logger.info(
         "Temporal split — train_end=%s  val_end=%s  test_end=%s",
-        train_end.date(), val_end.date(), test_end.date(),
+        train_end.date(),
+        val_end.date(),
+        test_end.date(),
     )
     result.log_sizes()
     return result
 
 
 def assert_no_leakage(
-    split_or_train: "SplitResult | pd.DataFrame",
+    split_or_train: SplitResult | pd.DataFrame,
     test: pd.DataFrame | None = None,
     date_col: str = "snapshot_date",
 ) -> None:
@@ -125,12 +134,13 @@ def assert_no_leakage(
         test_df = test  # type: ignore[assignment]
 
     max_train_date = pd.to_datetime(train_df[date_col]).max()
-    min_test_date  = pd.to_datetime(test_df[date_col]).min()
+    min_test_date = pd.to_datetime(test_df[date_col]).min()
     assert max_train_date < min_test_date, (
         f"DATA LEAKAGE DETECTED: max train date ({max_train_date.date()}) "
         f">= min test date ({min_test_date.date()})"
     )
     logger.info(
         "Leakage check passed — max_train=%s  min_test=%s",
-        max_train_date.date(), min_test_date.date(),
+        max_train_date.date(),
+        min_test_date.date(),
     )

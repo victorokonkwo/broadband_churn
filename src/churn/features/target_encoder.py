@@ -4,10 +4,11 @@ Replaces high-cardinality categoricals (crm_package_name, sales_channel)
 with the mean churn rate for that category — using K-fold cross-validation
 to prevent target leakage within the training set.
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
@@ -70,15 +71,11 @@ class CrossValidatedTargetEncoder:
                     .rename(columns={"sum": "n_pos", "count": "n"})
                 )
                 cat_means["smoothed_mean"] = (
-                    (cat_means["n_pos"] + self.smoothing * self._global_mean)
-                    / (cat_means["n"] + self.smoothing)
-                )
+                    cat_means["n_pos"] + self.smoothing * self._global_mean
+                ) / (cat_means["n"] + self.smoothing)
                 mapping = cat_means["smoothed_mean"].to_dict()
                 encoded[val_idx] = (
-                    df.iloc[val_idx][col]
-                    .map(mapping)
-                    .fillna(self._global_mean)
-                    .to_numpy()
+                    df.iloc[val_idx][col].map(mapping).fillna(self._global_mean).to_numpy()
                 )
 
             df[f"{col}_encoded"] = encoded
@@ -90,9 +87,8 @@ class CrossValidatedTargetEncoder:
                 .rename(columns={"sum": "n_pos", "count": "n"})
             )
             cat_stats["smoothed_mean"] = (
-                (cat_stats["n_pos"] + self.smoothing * self._global_mean)
-                / (cat_stats["n"] + self.smoothing)
-            )
+                cat_stats["n_pos"] + self.smoothing * self._global_mean
+            ) / (cat_stats["n"] + self.smoothing)
             self._category_means[col] = cat_stats["smoothed_mean"].to_dict()
             logger.info("  Encoded %s (%s categories)", col, len(self._category_means[col]))
 
@@ -103,8 +99,6 @@ class CrossValidatedTargetEncoder:
         df = df.copy()
         for col in self.columns:
             df[f"{col}_encoded"] = (
-                df[col]
-                .map(self._category_means.get(col, {}))
-                .fillna(self._global_mean)
+                df[col].map(self._category_means.get(col, {})).fillna(self._global_mean)
             )
         return df

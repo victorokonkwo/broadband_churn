@@ -4,13 +4,12 @@ Optimises Average Precision (AUC-PR) on the validation set.
 Runs 50 trials by default — each trial fits a LightGBM model with
 early stopping, so poor trials are pruned quickly.
 """
+
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import lightgbm as lgb
-import numpy as np
 import optuna
 import pandas as pd
 from omegaconf import OmegaConf
@@ -52,15 +51,13 @@ def build_objective(
 
     feat_cols = _get_feature_cols(X_train)
     train_data = lgb.Dataset(X_train[feat_cols], label=y_train, free_raw_data=False)
-    val_data   = lgb.Dataset(X_val[feat_cols], label=y_val, reference=train_data, free_raw_data=False)
+    val_data = lgb.Dataset(X_val[feat_cols], label=y_val, reference=train_data, free_raw_data=False)
 
     def objective(trial: optuna.Trial) -> float:
         params = {
             **base_params,
             "num_leaves": trial.suggest_int("num_leaves", *search.num_leaves),
-            "learning_rate": trial.suggest_float(
-                "learning_rate", *search.learning_rate, log=True
-            ),
+            "learning_rate": trial.suggest_float("learning_rate", *search.learning_rate, log=True),
             "min_child_samples": trial.suggest_int("min_child_samples", *search.min_child_samples),
             "feature_fraction": trial.suggest_float("feature_fraction", *search.feature_fraction),
             "bagging_fraction": trial.suggest_float("bagging_fraction", *search.bagging_fraction),
@@ -108,7 +105,7 @@ def run_study(
         dict of best hyperparameters to pass into LGBMChurnModel(params=...)
     """
     sampler = optuna.samplers.TPESampler(seed=42)
-    pruner  = optuna.pruners.MedianPruner(n_warmup_steps=10)
+    pruner = optuna.pruners.MedianPruner(n_warmup_steps=10)
 
     study = optuna.create_study(
         direction="maximize",

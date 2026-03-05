@@ -3,6 +3,7 @@ Data ingestion layer.
 Loads raw CSV / Parquet files into DuckDB and exposes validated DataFrames.
 All reads go through DuckDB so calls.csv (>50MB) is never fully loaded into RAM.
 """
+
 from __future__ import annotations
 
 import logging
@@ -34,10 +35,10 @@ def ingest_raw_tables(con: duckdb.DuckDBPyConnection | None = None) -> None:
     if con is None:
         con = get_connection()
 
-    cease   = str(cfg.data.cease_csv)
-    ci      = str(cfg.data.customer_info_parquet)
-    usage   = str(cfg.data.usage_parquet)
-    calls   = str(cfg.data.calls_csv)
+    cease = str(cfg.data.cease_csv)
+    ci = str(cfg.data.customer_info_parquet)
+    usage = str(cfg.data.usage_parquet)
+    calls = str(cfg.data.calls_csv)
 
     logger.info("Ingesting cease.csv …")
     con.execute(f"CREATE OR REPLACE TABLE cease AS SELECT * FROM read_csv_auto('{cease}')")
@@ -63,6 +64,7 @@ def _log_table_stats(con: duckdb.DuckDBPyConnection) -> None:
 
 # ─── Convenience query helpers ────────────────────────────────────────────────
 
+
 def query(sql: str, con: duckdb.DuckDBPyConnection | None = None) -> pd.DataFrame:
     """Execute SQL and return a pandas DataFrame."""
     if con is None:
@@ -78,7 +80,9 @@ def load_customer_info(con: duckdb.DuckDBPyConnection | None = None) -> pd.DataF
     return query("SELECT * FROM customer_info", con)
 
 
-def load_usage_sample(n: int = 100_000, con: duckdb.DuckDBPyConnection | None = None) -> pd.DataFrame:
+def load_usage_sample(
+    n: int = 100_000, con: duckdb.DuckDBPyConnection | None = None
+) -> pd.DataFrame:
     """Sample n rows from usage for EDA — full table may be large."""
     return query(f"SELECT * FROM usage USING SAMPLE {n}", con)
 

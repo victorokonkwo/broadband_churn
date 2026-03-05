@@ -10,10 +10,10 @@ Output segments map directly to retention actions:
     Segment C — Price Sensitive: loyalty_call + CompetitorDeals signals → counter-offer
     Segment D — Financial Risk : dd_cancel signals dominant → payment plan discussion
 """
+
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -69,8 +69,7 @@ def cluster_on_shap_values(
     # Add top SHAP driver per cluster
     feature_names = list(X_feat.columns)
     result["shap_top_driver"] = [
-        feature_names[np.argmax(np.abs(shap_values.values[i]))]
-        for i in range(len(result))
+        feature_names[np.argmax(np.abs(shap_values.values[i]))] for i in range(len(result))
     ]
 
     _log_cluster_summary(result, shap_values, feature_names)
@@ -124,9 +123,13 @@ def plot_segment_profiles(
         heatmap_data[cid] = shap_values.values[mask][:, top_feat_idx].mean(axis=0)
 
     fig, ax = plt.subplots(figsize=(12, max(4, n_clusters * 1.2)))
-    im = ax.imshow(heatmap_data, cmap="RdBu_r", aspect="auto",
-                   vmin=-np.max(np.abs(heatmap_data)),
-                   vmax=np.max(np.abs(heatmap_data)))
+    im = ax.imshow(
+        heatmap_data,
+        cmap="RdBu_r",
+        aspect="auto",
+        vmin=-np.max(np.abs(heatmap_data)),
+        vmax=np.max(np.abs(heatmap_data)),
+    )
     plt.colorbar(im, ax=ax, label="Mean SHAP value")
 
     cluster_labels = [f"Cluster {c}: {SEGMENT_LABELS.get(c, 'Unknown')}" for c in range(n_clusters)]

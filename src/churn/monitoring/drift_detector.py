@@ -8,11 +8,11 @@ If drift exceeds configured thresholds → triggers retrain alert.
 Entry point: python -m churn.monitoring.drift_detector
          or: make monitor
 """
+
 from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
 
 import pandas as pd
 from evidently import Report
@@ -79,7 +79,8 @@ def run_drift_report(
 
     logger.info(
         "Drift report — drift_detected=%s  drift_share=%.2f%%",
-        drift_detected, drift_share * 100,
+        drift_detected,
+        drift_share * 100,
     )
 
     if save:
@@ -112,9 +113,7 @@ def run_full_monitoring(
     # Combine alerts
     psi_alerts = [f for f, v in psi_result.items() if v > 0.2]
     if psi_alerts:
-        logger.warning(
-            "PSI ALERT — features with PSI > 0.2: %s", psi_alerts
-        )
+        logger.warning("PSI ALERT — features with PSI > 0.2: %s", psi_alerts)
 
     return {
         "drift_detected": drift_result["drift_detected"],

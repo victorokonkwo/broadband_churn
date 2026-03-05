@@ -2,10 +2,10 @@
 Evaluation plots.
 All plots saved to outputs/figures/ and returned as matplotlib Figures.
 """
+
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,8 +39,9 @@ def plot_precision_recall_curve(
         x = np.linspace(0.01, 1.0, 100)
         y_iso = f_score * x / (2 * x - f_score)
         ax.plot(x[y_iso >= 0], y_iso[y_iso >= 0], "k--", alpha=0.1, linewidth=0.8)
-        ax.annotate(f"F1={f_score:.1f}", xy=(0.9, y_iso[np.argmin(abs(x - 0.9))]),
-                    fontsize=7, color="grey")
+        ax.annotate(
+            f"F1={f_score:.1f}", xy=(0.9, y_iso[np.argmin(abs(x - 0.9))]), fontsize=7, color="grey"
+        )
 
     ax.plot(recall, precision, "steelblue", linewidth=2, label=f"LightGBM (AUC-PR={auc_pr:.3f})")
     ax.axhline(base_rate, color="red", linestyle="--", label=f"No-skill baseline ({base_rate:.3f})")
@@ -65,6 +66,7 @@ def plot_roc_curve(
     save: bool = True,
 ) -> plt.Figure:
     from sklearn.metrics import roc_auc_score
+
     fpr, tpr, _ = roc_curve(y_true, y_prob)
     if auc_roc is None:
         auc_roc = roc_auc_score(y_true, y_prob)
@@ -120,8 +122,10 @@ def plot_lift_chart(
 
     # Lift per decile
     dec_table = decile_table(y_true, y_prob)
-    colors = ["#d73027" if l >= 2 else "#4393c3" if l >= 1 else "#e0e0e0"
-              for l in dec_table["lift"]]
+    colors = [
+        "#d73027" if lift_value >= 2 else "#4393c3" if lift_value >= 1 else "#e0e0e0"
+        for lift_value in dec_table["lift"]
+    ]
     axes[1].bar(dec_table["decile"], dec_table["lift"], color=colors, edgecolor="white")
     axes[1].axhline(1.0, color="black", linestyle="--", alpha=0.5, label="No lift baseline")
     axes[1].set_xlabel("Decile (1 = highest churn score)")
@@ -150,8 +154,12 @@ def plot_score_distribution(
     else:
         fig = ax.get_figure()
     bins = np.linspace(0, 1, 40)
-    ax.hist(y_prob[y_true == 0], bins=bins, alpha=0.6, label="Retained", color="steelblue", density=True)
-    ax.hist(y_prob[y_true == 1], bins=bins, alpha=0.6, label="Churned", color="tomato", density=True)
+    ax.hist(
+        y_prob[y_true == 0], bins=bins, alpha=0.6, label="Retained", color="steelblue", density=True
+    )
+    ax.hist(
+        y_prob[y_true == 1], bins=bins, alpha=0.6, label="Churned", color="tomato", density=True
+    )
     ax.set_xlabel("Churn probability score")
     ax.set_ylabel("Density")
     ax.set_title("Score Distribution by True Label", fontweight="bold")

@@ -4,6 +4,7 @@ ooc_days (days out of contract) is historically the single strongest
 predictor of churn — customers near or past their contract end date
 are significantly more likely to place a cease.
 """
+
 from __future__ import annotations
 
 import logging
@@ -46,7 +47,7 @@ def build_contract_features(
         DataFrame with one row per customer and enriched feature columns
     """
     df = customer_info.copy()
-    snap = pd.Timestamp(snapshot_date)
+    _ = snapshot_date
 
     # ── Contract status ordinal encoding ──────────────────────────────────────
     df["contract_status_risk"] = (

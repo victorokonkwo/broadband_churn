@@ -13,6 +13,7 @@ Runs the full end-to-end training lifecycle:
 Entry point: python -m churn.training.trainer
          or: make train
 """
+
 from __future__ import annotations
 
 import logging
@@ -23,9 +24,9 @@ import mlflow.lightgbm
 import pandas as pd
 
 from churn.config import cfg
-from churn.data.splitter import temporal_split, assert_no_leakage
-from churn.models.lgbm_model import LGBMChurnModel, EXCLUDE_COLS
+from churn.data.splitter import assert_no_leakage, temporal_split
 from churn.models.calibrator import ChurnCalibrator
+from churn.models.lgbm_model import LGBMChurnModel
 from churn.training.tuner import run_study
 
 logger = logging.getLogger(__name__)
@@ -36,8 +37,7 @@ def _load_feature_matrix(features_dir: Path) -> pd.DataFrame:
     parquet_files = sorted(features_dir.glob("features_*.parquet"))
     if not parquet_files:
         raise FileNotFoundError(
-            f"No feature parquet files found in {features_dir}. "
-            "Run `make features` first."
+            f"No feature parquet files found in {features_dir}. Run `make features` first."
         )
     dfs = [pd.read_parquet(p) for p in parquet_files]
     df = pd.concat(dfs, ignore_index=True)
@@ -73,27 +73,27 @@ def train(
         assert_no_leakage(split.train, split.test, date_col="snapshot_date")
 
         X_train, y_train = split.train, split.train["churned"]
-        X_val,   y_val   = split.val,   split.val["churned"]
-        X_test,  y_test  = split.test,  split.test["churned"]
+        X_val, y_val = split.val, split.val["churned"]
+        X_test, y_test = split.test, split.test["churned"]
 
-        mlflow.log_params({
-            "train_size": len(X_train),
-            "val_size": len(X_val),
-            "test_size": len(X_test),
-            "train_churn_rate": round(float(y_train.mean()), 4),
-            "val_churn_rate": round(float(y_val.mean()), 4),
-            "test_churn_rate": round(float(y_test.mean()), 4),
-            "prediction_window_days": cfg.label.prediction_window_days,
-        })
+        mlflow.log_params(
+            {
+                "train_size": len(X_train),
+                "val_size": len(X_val),
+                "test_size": len(X_test),
+                "train_churn_rate": round(float(y_train.mean()), 4),
+                "val_churn_rate": round(float(y_val.mean()), 4),
+                "test_churn_rate": round(float(y_test.mean()), 4),
+                "prediction_window_days": cfg.label.prediction_window_days,
+            }
+        )
 
         # ── 3. Hyperparameter tuning ──────────────────────────────────────────
         if skip_tuning:
             best_params = {}
             logger.info("Skipping Optuna tuning — using default params")
         else:
-            best_params = run_study(
-                X_train, y_train, X_val, y_val, n_trials=n_trials
-            )
+            best_params = run_study(X_train, y_train, X_val, y_val, n_trials=n_trials)
             mlflow.log_params({f"lgbm_{k}": v for k, v in best_params.items()})
 
         # ── 4. Train final model ──────────────────────────────────────────────
@@ -114,7 +114,9 @@ def train(
 
         logger.info(
             "Test set — AUC-PR=%.4f  AUC-ROC=%.4f  F1=%.4f",
-            metrics["auc_pr"], metrics["auc_roc"], metrics["f1"],
+            metrics["auc_pr"],
+            metrics["auc_roc"],
+            metrics["f1"],
         )
 
         # ── 7. Save artefacts ─────────────────────────────────────────────────
@@ -122,7 +124,7 @@ def train(
         artefact_dir.mkdir(parents=True, exist_ok=True)
 
         model_path = artefact_dir / "lgbm_churn_model.pkl"
-        cal_path   = artefact_dir / "calibrator.pkl"
+        cal_path = artefact_dir / "calibrator.pkl"
         model.save(model_path)
         calibrator.save(cal_path)
 
@@ -138,7 +140,8 @@ def train(
 
         logger.info(
             "Training complete — run_id=%s  model saved → %s",
-            run.info.run_id, model_path,
+            run.info.run_id,
+            model_path,
         )
 
     return model, calibrator

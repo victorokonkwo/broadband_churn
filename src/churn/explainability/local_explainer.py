@@ -5,10 +5,10 @@ Waterfall plots show the exact contribution of each feature for one customer.
 These are invaluable in the retention team's UI — agents see WHY a customer
 is flagged so they can tailor the retention conversation.
 """
+
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +16,7 @@ import pandas as pd
 import shap
 
 from churn.config import cfg
-from churn.models.lgbm_model import LGBMChurnModel, EXCLUDE_COLS
+from churn.models.lgbm_model import EXCLUDE_COLS, LGBMChurnModel
 
 logger = logging.getLogger(__name__)
 FIG_DIR = cfg.paths.figures_dir
@@ -105,7 +105,7 @@ def explain_top_customers(
     feature_cols = [c for c in X.columns if c not in EXCLUDE_COLS]
     X_feat = X[feature_cols]
 
-    explainer   = shap.TreeExplainer(model.booster)
+    explainer = shap.TreeExplainer(model.booster)
     shap_values = explainer(X_feat)
 
     # Get top-scored customers
@@ -113,23 +113,30 @@ def explain_top_customers(
 
     explanations = []
     for rank, idx in enumerate(top_idx):
-        cid = X.get("unique_customer_identifier", pd.Series()).iloc[idx] if "unique_customer_identifier" in X.columns else str(idx)
+        cid = (
+            X.get("unique_customer_identifier", pd.Series()).iloc[idx]
+            if "unique_customer_identifier" in X.columns
+            else str(idx)
+        )
         prob = y_prob[idx]
 
         plot_waterfall(
-            shap_values, idx,
+            shap_values,
+            idx,
             customer_id=str(cid),
             churn_prob=float(prob),
             save=save,
-            filename=f"shap_waterfall_rank{rank+1}.png",
+            filename=f"shap_waterfall_rank{rank + 1}.png",
         )
 
         drivers = get_top_drivers(shap_values, idx, feature_cols, n=cfg.scoring.top_n_drivers)
-        explanations.append({
-            "rank": rank + 1,
-            "customer_id": cid,
-            "churn_probability": round(float(prob), 4),
-            "drivers": drivers,
-        })
+        explanations.append(
+            {
+                "rank": rank + 1,
+                "customer_id": cid,
+                "churn_probability": round(float(prob), 4),
+                "drivers": drivers,
+            }
+        )
 
     return explanations

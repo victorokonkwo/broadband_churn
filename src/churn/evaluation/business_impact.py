@@ -9,6 +9,7 @@ Key framing:
     - Net model value = churners rescued × avg_revenue - false_positives × call_cost
     - Compare to random calling baseline at same capacity
 """
+
 from __future__ import annotations
 
 import logging
@@ -19,10 +20,10 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 # Default business assumptions (override as needed)
-AVG_ANNUAL_REVENUE_GBP = 360.0    # £30/month × 12
-CALL_COST_GBP          = 8.0      # agent time cost per outbound call (~10 min)
-RETENTION_SUCCESS_RATE = 0.25     # 25% of contacted churners are retained
-CAPACITY_PCT           = 0.20     # ops team can contact top 20% of scored base
+AVG_ANNUAL_REVENUE_GBP = 360.0  # £30/month × 12
+CALL_COST_GBP = 8.0  # agent time cost per outbound call (~10 min)
+RETENTION_SUCCESS_RATE = 0.25  # 25% of contacted churners are retained
+CAPACITY_PCT = 0.20  # ops team can contact top 20% of scored base
 
 
 def compute_business_impact(
@@ -42,29 +43,28 @@ def compute_business_impact(
     """
     y = np.asarray(y_true)
     p = np.asarray(y_prob)
-    n = n_customers or len(y)
-    base_rate = y.mean()
+    _ = n_customers
 
     results = []
     for cap in [0.05, 0.10, 0.15, 0.20, 0.30]:
         k = max(1, int(len(y) * cap))
-        top_k_idx  = np.argsort(p)[::-1][:k]
+        top_k_idx = np.argsort(p)[::-1][:k]
         rand_k_idx = np.random.choice(len(y), k, replace=False)
 
-        def _impact(idx: np.ndarray, label: str) -> dict:
+        def _impact(idx: np.ndarray, label: str, k_value: int, cap_value: float) -> dict:
             tp = y[idx].sum()
-            fp = k - tp
+            fp = k_value - tp
             rescued = tp * retention_success_rate
             revenue_saved = rescued * avg_revenue
-            call_spend = k * call_cost
+            call_spend = k_value * call_cost
             net_value = revenue_saved - call_spend
             return {
                 "strategy": label,
-                "capacity_pct": cap,
-                "customers_contacted": k,
+                "capacity_pct": cap_value,
+                "customers_contacted": k_value,
                 "true_positives": int(tp),
                 "false_positives": int(fp),
-                "precision": round(tp / k, 4) if k > 0 else 0,
+                "precision": round(tp / k_value, 4) if k_value > 0 else 0,
                 "capture_rate": round(tp / y.sum(), 4) if y.sum() > 0 else 0,
                 "estimated_retained": round(rescued, 1),
                 "revenue_saved_gbp": round(revenue_saved, 2),
@@ -72,8 +72,8 @@ def compute_business_impact(
                 "net_value_gbp": round(net_value, 2),
             }
 
-        results.append(_impact(top_k_idx, "Model-guided"))
-        results.append(_impact(rand_k_idx, "Random baseline"))
+        results.append(_impact(top_k_idx, "Model-guided", k, cap))
+        results.append(_impact(rand_k_idx, "Random baseline", k, cap))
 
     df = pd.DataFrame(results)
     _log_headline(df, capacity_pct=CAPACITY_PCT)
@@ -81,7 +81,7 @@ def compute_business_impact(
 
 
 def _log_headline(df: pd.DataFrame, capacity_pct: float) -> None:
-    model_row  = df[(df["strategy"] == "Model-guided") & (df["capacity_pct"] == capacity_pct)]
+    model_row = df[(df["strategy"] == "Model-guided") & (df["capacity_pct"] == capacity_pct)]
     random_row = df[(df["strategy"] == "Random baseline") & (df["capacity_pct"] == capacity_pct)]
 
     if model_row.empty or random_row.empty:

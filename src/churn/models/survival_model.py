@@ -8,6 +8,7 @@ Models:
     CoxPHChurnModel   : Semi-parametric Cox Proportional Hazards (lifelines)
     WeibullAFTChurnModel : Parametric Weibull Accelerated Failure Time (lifelines)
 """
+
 from __future__ import annotations
 
 import logging
@@ -45,12 +46,11 @@ class CoxPHChurnModel:
 
     def _prep(self, df: pd.DataFrame) -> pd.DataFrame:
         keep = [
-            c for c in df.columns
-            if c not in SURVIVAL_EXCLUDE - {self.duration_col, self.event_col}
+            c for c in df.columns if c not in SURVIVAL_EXCLUDE - {self.duration_col, self.event_col}
         ]
         return df[keep].select_dtypes(include=["number"])
 
-    def fit(self, df: pd.DataFrame) -> "CoxPHChurnModel":
+    def fit(self, df: pd.DataFrame) -> CoxPHChurnModel:
         data = self._prep(df)
         self._model.fit(data, duration_col=self.duration_col, event_col=self.event_col)
         logger.info("CoxPH fitted — concordance index: %.4f", self._model.concordance_index_)
@@ -61,7 +61,9 @@ class CoxPHChurnModel:
         data = self._prep(df)
         sf = self._model.predict_survival_function(data)
         # Median = time at which survival function crosses 0.5
-        medians = sf.apply(lambda col: col[col <= 0.5].index[0] if (col <= 0.5).any() else sf.index[-1])
+        medians = sf.apply(
+            lambda col: col[col <= 0.5].index[0] if (col <= 0.5).any() else sf.index[-1]
+        )
         return pd.Series(medians.values, index=df.index, name="expected_days_to_churn")
 
     def predict_churn_probability(self, df: pd.DataFrame, at_days: int = 90) -> pd.Series:
@@ -75,12 +77,12 @@ class CoxPHChurnModel:
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "wb") as f:
+        with path.open("wb") as f:
             pickle.dump(self, f)
 
     @classmethod
-    def load(cls, path: Path) -> "CoxPHChurnModel":
-        with open(path, "rb") as f:
+    def load(cls, path: Path) -> CoxPHChurnModel:
+        with path.open("rb") as f:
             return pickle.load(f)
 
 
@@ -99,12 +101,11 @@ class WeibullAFTChurnModel:
 
     def _prep(self, df: pd.DataFrame) -> pd.DataFrame:
         keep = [
-            c for c in df.columns
-            if c not in SURVIVAL_EXCLUDE - {self.duration_col, self.event_col}
+            c for c in df.columns if c not in SURVIVAL_EXCLUDE - {self.duration_col, self.event_col}
         ]
         return df[keep].select_dtypes(include=["number"])
 
-    def fit(self, df: pd.DataFrame) -> "WeibullAFTChurnModel":
+    def fit(self, df: pd.DataFrame) -> WeibullAFTChurnModel:
         data = self._prep(df)
         self._model.fit(data, duration_col=self.duration_col, event_col=self.event_col)
         logger.info("WeibullAFT fitted")
@@ -117,10 +118,10 @@ class WeibullAFTChurnModel:
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "wb") as f:
+        with path.open("wb") as f:
             pickle.dump(self, f)
 
     @classmethod
-    def load(cls, path: Path) -> "WeibullAFTChurnModel":
-        with open(path, "rb") as f:
+    def load(cls, path: Path) -> WeibullAFTChurnModel:
+        with path.open("rb") as f:
             return pickle.load(f)

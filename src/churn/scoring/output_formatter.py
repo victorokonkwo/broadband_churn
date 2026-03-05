@@ -5,6 +5,7 @@ Transforms raw scores into a CRM-ready file with:
     - Top 3 churn drivers in human-readable text
     - Key risk signals for the retention agent
 """
+
 from __future__ import annotations
 
 import logging
@@ -36,7 +37,7 @@ def format_scored_output(
         tenure_days          : customer tenure for context
     """
     high = cfg.scoring.high_risk_threshold
-    med  = cfg.scoring.medium_risk_threshold
+    med = cfg.scoring.medium_risk_threshold
 
     def _tier(p: float) -> str:
         if p >= high:
@@ -46,22 +47,29 @@ def format_scored_output(
         return "Low"
 
     n_drivers = cfg.scoring.top_n_drivers
-    driver_cols = {f"driver_{i+1}": [] for i in range(n_drivers)}
+    driver_cols = {f"driver_{i + 1}": [] for i in range(n_drivers)}
     for drivers in top_drivers:
         for i in range(n_drivers):
-            col = f"driver_{i+1}"
+            col = f"driver_{i + 1}"
             driver_cols[col].append(drivers[i] if i < len(drivers) else "")
 
-    scored = pd.DataFrame({
-        "unique_customer_identifier": customer_ids.values,
-        "churn_probability": np.round(probs, 4),
-        "risk_tier": [_tier(p) for p in probs],
-        **driver_cols,
-    })
+    scored = pd.DataFrame(
+        {
+            "unique_customer_identifier": customer_ids.values,
+            "churn_probability": np.round(probs, 4),
+            "risk_tier": [_tier(p) for p in probs],
+            **driver_cols,
+        }
+    )
 
     # Add contextual columns for the retention agent
-    context_cols = ["ooc_days", "contract_status_risk", "tenure_days",
-                    "loyalty_call_flag_30d", "speed_gap_pct"]
+    context_cols = [
+        "ooc_days",
+        "contract_status_risk",
+        "tenure_days",
+        "loyalty_call_flag_30d",
+        "speed_gap_pct",
+    ]
     for col in context_cols:
         if col in features.columns:
             scored[col] = features[col].values
@@ -74,7 +82,7 @@ def format_scored_output(
         high_n = max(1, int(np.ceil(len(scored) * 0.05)))
         med_n = max(high_n + 1, int(np.ceil(len(scored) * 0.20)))
         scored.loc[: high_n - 1, "risk_tier"] = "High"
-        scored.loc[high_n: med_n - 1, "risk_tier"] = "Medium"
+        scored.loc[high_n : med_n - 1, "risk_tier"] = "Medium"
         logger.warning(
             "All scores fell below absolute thresholds; applied percentile fallback tiers "
             "(High top 5%%, Medium next 15%%)."

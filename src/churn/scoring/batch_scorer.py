@@ -6,11 +6,11 @@ ready for the retention ops team.
 Entry point: python -m churn.scoring.batch_scorer
          or: make score
 """
+
 from __future__ import annotations
 
 import logging
 import shutil
-from datetime import date
 from pathlib import Path
 
 import duckdb
@@ -21,8 +21,8 @@ import shap
 from churn.config import cfg
 from churn.data.loader import get_connection
 from churn.features.feature_store import build_feature_matrix
-from churn.models.lgbm_model import LGBMChurnModel, EXCLUDE_COLS
 from churn.models.calibrator import ChurnCalibrator
+from churn.models.lgbm_model import EXCLUDE_COLS, LGBMChurnModel
 from churn.scoring.output_formatter import format_scored_output
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def _resolve_artefact_path(
     return fallback
 
 
-def get_active_customers(con: "duckdb.DuckDBPyConnection") -> pd.DataFrame:
+def get_active_customers(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     """
     Identify all customers who have NOT placed a cease.
     These are the customers we want to score for proactive retention.
@@ -85,7 +85,7 @@ def score_active_customers(
         fallback_name="calibrator.joblib",
     )
 
-    model      = LGBMChurnModel.load(model_path)
+    model = LGBMChurnModel.load(model_path)
     calibrator = ChurnCalibrator.load(calibrator_path)
 
     try:
@@ -105,7 +105,9 @@ def score_active_customers(
             con = get_connection(db_path=snapshot_db, read_only=True)
 
     if snapshot_date is None:
-        snap = str(con.execute("SELECT CAST(MAX(datevalue) AS DATE) FROM customer_info").fetchone()[0])
+        snap = str(
+            con.execute("SELECT CAST(MAX(datevalue) AS DATE) FROM customer_info").fetchone()[0]
+        )
     else:
         snap = snapshot_date
 
@@ -135,7 +137,7 @@ def score_active_customers(
     top_drivers = []
     for i in range(len(features)):
         vals = shap_values.values[i]
-        top3_idx = np.argsort(np.abs(vals))[::-1][:cfg.scoring.top_n_drivers]
+        top3_idx = np.argsort(np.abs(vals))[::-1][: cfg.scoring.top_n_drivers]
         drivers = [aligned_feature_names[j] for j in top3_idx]
         top_drivers.append(drivers)
 
@@ -153,7 +155,8 @@ def score_active_customers(
     scored.to_csv(out_path, index=False)
     logger.info(
         "Scored %s customers → %s  (High: %s  Medium: %s  Low: %s)",
-        f"{len(scored):,}", out_path,
+        f"{len(scored):,}",
+        out_path,
         (scored["risk_tier"] == "High").sum(),
         (scored["risk_tier"] == "Medium").sum(),
         (scored["risk_tier"] == "Low").sum(),
