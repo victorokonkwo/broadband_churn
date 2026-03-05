@@ -88,7 +88,14 @@ def build_contract_features(
     ).astype(str)
 
     # ── Technology encoding ───────────────────────────────────────────────────
-    tech_dummies = pd.get_dummies(df["technology"], prefix="tech", dtype=int)
+    if "technology" in df.columns:
+        technology_series = df["technology"]
+    elif "Technology" in df.columns:
+        technology_series = df["Technology"]
+    else:
+        technology_series = pd.Series("unknown", index=df.index)
+
+    tech_dummies = pd.get_dummies(technology_series, prefix="tech", dtype=int)
     df = pd.concat([df, tech_dummies], axis=1)
 
     # ── Retain only engineered columns + identifier ──────────────────────────
