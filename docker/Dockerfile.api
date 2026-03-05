@@ -1,0 +1,45 @@
+# ── Stage 1: builder ─────────────────────────────────────────────
+FROM python:3.10-slim AS builder
+
+WORKDIR /build
+
+COPY requirements.txt requirements-api.txt pyproject.toml ./
+COPY src/ src/
+
+RUN pip install --no-cache-dir --prefix=/install \
+    -r requirements.txt \
+    -r requirements-api.txt \
+    .
+
+# ── Stage 2: runtime ────────────────────────────────────────────
+FROM python:3.10-slim
+
+LABEL maintainer="ds-team@uktelecom.co.uk"
+LABEL description="UK Telecom churn scoring API"
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
+
+WORKDIR /app
+
+# Copy application code + configs
+COPY conf/ conf/
+COPY src/ src/
+
+# Create non-root user
+RUN groupadd -r churn && useradd --no-log-init -r -g churn churn \
+    && chown -R churn:churn /app
+USER churn
+
+# Model artefacts volume
+VOLUME ["/app/outputs/model_artefacts"]
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+
+# uvicorn with 2 workers (adjust via $WEB_CONCURRENCY)
+CMD ["uvicorn", "churn.api.main:app", \
+     "--host", "0.0.0.0", "--port", "8000", \
+     "--workers", "2", "--log-level", "info"]

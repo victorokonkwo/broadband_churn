@@ -1,0 +1,18 @@
+# Survival analysis model config (lifelines)
+
+# Cox Proportional Hazards
+cox_ph:
+  penalizer: 0.1       # L2 regularisation
+  l1_ratio: 0.0        # 0 = Ridge, 1 = Lasso
+  duration_col: tenure_days
+  event_col: churned
+
+# Weibull AFT (parametric alternative)
+weibull_aft:
+  penalizer: 0.0
+  l1_ratio: 0.0
+  duration_col: tenure_days
+  event_col: churned
+
+# Output: expected days to churn added to scored_customers.csv
+output_col: expected_days_to_churn

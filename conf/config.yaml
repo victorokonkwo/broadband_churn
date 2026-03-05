@@ -1,0 +1,46 @@
+# ─── Paths ───────────────────────────────────────────────────────────────────
+paths:
+  raw_data_dir: data/raw
+  processed_data_dir: data/processed
+  features_dir: data/features
+  outputs_dir: outputs
+  figures_dir: outputs/figures
+  reports_dir: outputs/reports
+  model_artefacts_dir: outputs/model_artefacts
+  duckdb_path: data/processed/churn.db
+  scored_customers_path: outputs/scored_customers.csv
+
+# ─── Data files ───────────────────────────────────────────────────────────────
+data:
+  calls_csv: data/raw/calls.csv
+  cease_csv: data/raw/cease.csv
+  customer_info_parquet: data/raw/customer_info.parquet
+  usage_parquet: data/raw/usage.parquet
+
+# ─── Temporal split boundaries ────────────────────────────────────────────────
+splits:
+  # Train on data before this date; validate on train_end → val_end; test after val_end
+  train_end_date: "2023-06-01"
+  val_end_date: "2023-08-01"
+  test_end_date: "2023-10-01"
+
+# ─── Churn label definition ───────────────────────────────────────────────────
+label:
+  prediction_window_days: 90         # customer will churn within this window
+  include_pending_ceases: true       # cease_placed but not yet completed = churned
+
+# ─── Model ────────────────────────────────────────────────────────────────────
+model:
+  type: lightgbm                     # lightgbm | survival | uplift
+  registry_name: churn-lgbm
+
+# ─── Scoring thresholds ───────────────────────────────────────────────────────
+scoring:
+  high_risk_threshold: 0.70
+  medium_risk_threshold: 0.30
+  top_n_drivers: 3                   # SHAP drivers to include per customer
+
+# ─── MLflow ───────────────────────────────────────────────────────────────────
+mlflow:
+  tracking_uri: mlruns
+  experiment_name: churn-prediction

@@ -1,0 +1,25 @@
+# PSI and Evidently drift alert thresholds
+
+# Population Stability Index (PSI)
+# < 0.1 = no significant change
+# 0.1 – 0.2 = moderate change — investigate
+# > 0.2 = significant change — trigger retrain alert
+psi:
+  warning_threshold: 0.1
+  alert_threshold: 0.2
+
+# Evidently data drift
+evidently:
+  dataset_drift_share: 0.2     # if > 20% of features drift, raise alert
+  per_feature_p_value: 0.05    # stattest threshold per feature
+
+# Prediction drift
+prediction_drift:
+  mean_score_change_threshold: 0.05   # if mean churn score shifts by > 5pp, alert
+  score_psi_alert_threshold: 0.2
+
+# Monitoring cadence
+cadence:
+  data_drift_frequency: weekly
+  prediction_drift_frequency: weekly
+  model_performance_frequency: monthly   # requires labelled actuals T+90 lookback

@@ -1,0 +1,27 @@
+# Feature groups to include in training
+# Set enabled: false to exclude a group from the model
+
+groups:
+  call_features:
+    enabled: true
+    rolling_windows_days: [7, 14, 30, 90]
+    include_loyalty_flags: true
+    include_hold_time: true
+
+  usage_features:
+    enabled: true
+    rolling_windows_days: [7, 30, 60]
+    include_zero_usage: true
+    include_volatility: true
+
+  contract_features:
+    enabled: true
+    include_speed_gap: true
+    include_dd_cancels: true
+    tenure_buckets: [90, 365, 1095, 99999]
+
+# Target encoding config (applied to high-cardinality categoricals)
+target_encoding:
+  columns: [crm_package_name, sales_channel]
+  cv_folds: 5
+  smoothing: 1.0

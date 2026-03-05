@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Environments
+.env
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+notebooks/.ipynb_checkpoints/
+notebooks/mlruns/
+
+# Data — raw is checked in via DVC, not Git
+data/processed/
+data/features/
+data/raw/
+data/external/
+*.db
+*.duckdb
+
+# Generated outputs
+outputs/figures/
+outputs/reports/
+outputs/scored_customers.csv
+
+# Model artefacts — tracked by DVC
+outputs/model_artefacts/
+*.pkl
+*.joblib
+*.cbm
+
+# MLflow
+mlruns/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+
+# Python tooling / test caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.nox/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Logs
+*.log
+
+# Secrets
+.env
+*.pem
+*.key
+
+# DVC
+/tmp
