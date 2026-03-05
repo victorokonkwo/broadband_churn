@@ -107,7 +107,9 @@ class ChurnCalibrator:
         raw_probs = self._model.predict_proba(X)
         if isinstance(self._calibration_model, IsotonicRegression):
             return np.asarray(self._calibration_model.transform(raw_probs), dtype=float)
-        return np.asarray(self._calibration_model.predict_proba(raw_probs.reshape(-1, 1))[:, 1], dtype=float)
+        return np.asarray(
+            self._calibration_model.predict_proba(raw_probs.reshape(-1, 1))[:, 1], dtype=float
+        )
 
     def plot_calibration_curve(
         self,

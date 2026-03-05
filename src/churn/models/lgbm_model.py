@@ -57,11 +57,7 @@ class LGBMChurnModel(BaseChurnModel):
         raw_container = OmegaConf.to_container(raw, resolve=True)
         if not isinstance(raw_container, dict):
             raise TypeError("Expected LightGBM config to be a mapping")
-        defaults = {
-            k: v
-            for k, v in raw_container.items()
-            if k != "optuna"
-        }
+        defaults = {k: v for k, v in raw_container.items() if k != "optuna"}
         self.params = {**defaults, **(params or {})}
         self._booster: lgb.Booster | None = None
         self._feature_names: list[str] = []
